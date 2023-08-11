@@ -20,7 +20,8 @@ function crud() {
     });
     return {
         insert: async function(table, rows, values) { 
-            let query = 'INSERT INTO ? (?) VALUES (?)'
+            // let query = 'INSERT INTO ? (?) VALUES (?)'
+            let query = `INSERT INTO ${table} (${rows}) VALUES (${values})`;
             let params = [table, rows, values]
             try {
                 await pool.query(query, params)            
@@ -31,6 +32,17 @@ function crud() {
         },
         select: async function(table, rows) {
             let query = `SELECT ${rows} FROM ${table}`
+            // let params = [rows, table]
+            try {
+                promise = await pool.query(query);
+                return promise;
+            } catch (error) {
+                console.error('Erro ao executar select:', error)
+            }
+            pool.end();
+        },
+        selectWhere: async function(table, rows, condition) {
+            let query = `SELECT ${rows} FROM ${table} WHERE ${condition}`
             // let params = [rows, table]
             try {
                 promise = await pool.query(query)
