@@ -1,4 +1,6 @@
 const express = require('express')
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
 const database = require('./backend/database')
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -119,9 +121,44 @@ app.post('/conta/cadastro', async (req,res) => {
     }
 });
 
-app.get('/conta/planos', (req,res) => {
-    res.send();
-    
+app.post('/planos', async (req, res) => {
+    plano = req.body.plano;
+    if (plano != undefined) {
+        table = 'planos';
+        row = '*';
+        condition = `nm_plano = '${plano}'`;
+        promise = await database.crud().selectWhere(table, row, condition);
+        plano = promise[0][0];
+
+        //
+
+
+        // LÓGICA API DE PAGAMENTOS
+        pagamento = await false;
+
+        //
+        
+        if (pagamento) {
+            let set = `plano = '${plano.nm_plano}'`;
+            let conditionUpdate = `id = ${usr}`;
+
+            await database.crud().insert();
+            let query = `UPDATE ${table} SET ${set} WHERE ${condition}`;
+            await database.crud().update('vendedores', );
+        }
+
+        //res.redirect('/conta');
+    } else {
+        res.redirect('/planos?erro=1');
+    }
+});
+
+app.get('/planos', (req, res) => {
+    res.sendFile(__dirname + "/front/html/planos.html");
+});
+
+app.get('/src/js/planos.js', (req, res) => {
+    res.sendFile(__dirname + "/front/js/planos.js");
 });
 
 const server = app.listen(PORT, () => {
