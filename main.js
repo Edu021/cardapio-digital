@@ -1,6 +1,6 @@
-const express = require('express')
-const session = require("express-session");
+const express = require('express');
 const cookieParser = require("cookie-parser");
+const sessions = require('express-session');
 const database = require('./backend/database')
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -11,11 +11,23 @@ bot = require('./backend/bot')
 const app = express()
 const PORT = process.env.PORT || config.port;
 
+// creating 24 hours from milliseconds
+const oneDay = 1000 * 60 * 60 * 24;
+
+//session middleware
+app.use(sessions({
+    secret: "thisismysecrctekeyfhrgfgrfrty84fwir767",
+    saveUninitialized:true,
+    cookie: { maxAge: oneDay },
+    resave: false
+}));
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(cookieParser());
 
 app.get('/', async (req, res) => {
     //row = "*"
@@ -133,7 +145,7 @@ app.post('/planos', async (req, res) => {
         //
 
 
-        // LÓGICA API DE PAGAMENTOS
+        // Lï¿½GICA API DE PAGAMENTOS
         pagamento = await false;
 
         //
@@ -159,6 +171,46 @@ app.get('/planos', (req, res) => {
 
 app.get('/src/js/planos.js', (req, res) => {
     res.sendFile(__dirname + "/front/js/planos.js");
+});
+
+app.get('/entrar', (req, res) => {
+    let session=req.session;
+    console.log(session);
+
+    if(session.userid){
+        res.send("Welcome User <a href=\'/sair'>click to logout</a>");
+    }else {
+        res.sendFile(__dirname + "/front/html/login.html");
+    }
+    
+    
+
+});
+
+app.post('/entrar', (req, res) => {
+    //username and password
+    const myusername = 'user1'
+    const mypassword = 'mypassword'
+    // a variable to save a session
+
+    if(req.body.username == myusername && req.body.password == mypassword){
+        let session=req.session;
+        session.userid=req.body.username;
+        console.log(req.session)
+        res.send(`Hey there, welcome <a href=\'/sair'>click to logout</a>`);
+    }
+    else{
+        res.send('Invalid username or password');
+    }
+});
+
+app.get('/sair', (req, res) => {
+    req.session.userid = null; 
+    res.redirect("/entrar");
+});
+
+app.get('/src/js/login.js', (req, res) => {
+    res.sendFile(__dirname + "/front/js/login.js");
 });
 
 const server = app.listen(PORT, () => {
