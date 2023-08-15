@@ -1,12 +1,11 @@
 <html>
 <head>
-    <link rel="stylesheet" href="views/app.css">
 </head>
 
 <style>
     body {
-    display: flex;
-    justify-content: center;
+        display: flex;
+        justify-content: center;
     }
 
     form {
@@ -38,14 +37,18 @@
 
 <body>
     <form action="/entrar" method="post">
-        <h2>Login</h2>
+        <h2>Entrar</h2>
+        <div id="warning">
+            
+        </div>
         <div class="input-field">
-            <input type="text" name="username" id="username" placeholder="Enter Username">
+            <input type="text" name="email" id="email" placeholder="Enter Email">
         </div>
         <div class="input-field">
             <input type="password" name="password" id="password" placeholder="Enter Password">
         </div>
         <input type="submit" value="LogIn">
     </form>
+    <script src="/src/js/login.js"></script>
 </body>
 </html>
