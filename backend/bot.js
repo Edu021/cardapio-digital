@@ -2,11 +2,10 @@ const qr_code = require('qrcode');
 const { Client } = require('whatsapp-web.js');
 const client = new Client();
 
-async function bot(ip) {
+async function bot(ip,name) {
     console.log(`Gerando QR-CODE para ${ip} aguarde...`);
     await client.on('qr', qr => {
-        console.log(qr);
-        qr_code.toFile('qr.png' ,qr, function(err)
+        qr_code.toFile(`${name}-qr.png` ,qr, function(err)
         {
             if(err) return console.log("error");
         });

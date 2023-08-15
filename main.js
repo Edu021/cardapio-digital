@@ -1,7 +1,8 @@
 const express = require('express');
 const cookieParser = require("cookie-parser");
 const sessions = require('express-session');
-const database = require('./backend/database')
+const database = require('./backend/database');
+const filters = require('./backend/filterinputs');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { json } = require('body-parser');
@@ -188,39 +189,34 @@ app.get('/entrar', (req, res) => {
 app.post('/entrar', async (req, res) => {
     let table = `vendedores`;
     let row = `responsavel,email,senha`;
-    let condition = `email = '${req.body.email}' and senha = '${req.body.password}'`;
+    sanitizedEmail = await filters.filter().string(`'${req.body.email}'`);
+    sanitizedPass = await filters.filter().string(`'${req.body.password}'`);
+    let condition = `email = '${sanitizedEmail}' and senha = '${sanitizedPass}'`;
     let name, email, pass;
-    let filtered = false;
-    
-    if (req.body.password == '' || req.body.email == '') {
-        filtered = false;
-    } else {
-        filtered = true;
-    }
 
-    // AFTER INPUTS FILTERED TRY TO LOGIN
-    if (filtered) {
-        try {
-            promise = await database.crud().selectWhere(table, row, condition);
-            console.log(promise)
+    try {
+        promise = await database.crud().selectWhere(table, row, condition);
+        console.log(promise[0])
+        if(promise[0].length == 1) {
             name = promise[0][0].responsavel;
             email = promise[0][0].email;
             pass = promise[0][0].senha;
-        } catch (err) {
-            console.error(err);
         }
-
-        if (req.body.email == email && req.body.password == pass) {
-            let session = req.session;
-            session.email = email;
-            session.name = name;
-            console.log(session)
-            res.send(`Hey there, welcome ${session.name} | <a href=\'/sair'>click to logout</a>`);
-        }
-        else {
-            res.redirect('/entrar?warning=1');
-        }
+    } catch (err) {
+        console.error(err);
     }
+
+    if (req.body.email == email && req.body.password == pass) {
+        let session = req.session;
+        session.email = email;
+        session.name = name;
+        console.log(session)
+        res.send(`Hey there, welcome ${session.name} | <a href=\'/sair'>click to logout</a>`);
+    }
+    else {
+        res.redirect('/entrar?warning=1');
+    }
+    
 });
 
 app.get('/sair', (req, res) => {

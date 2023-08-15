@@ -5,28 +5,23 @@
 // FALSE = FAILED
 function filter() {
     return {
-        // FILTERS STRINGS OR ARRAY OF STRINGS
-        // FILTER: ('"!#$%¨&*=+§[]{}ºª~^`´?;:><,.\|)
-        string: async function (string) {
+        // FILTER STRING
+        string: async function (input) {
             try {
-                let promise = false;
-                if (string) {
-                    promise = true;
-                }
-                return promise;
+                if (typeof input !== 'string') {
+                    throw new Error('Input should be a string');
+                  }
+                
+                  // Remove espaÃ§os vazios no inÃ­cio e no final da entrada
+                  const trimmedInput = input.trim();
+                  
+                  // Remove caracteres especiais que poderiam ser usados em ataques de SQL Injection
+                  const sanitizedInput = trimmedInput.replace(/['";\\]/g, '');
+                  
+                  console.log("FROM: " + input + " TO: " + sanitizedInput);
+                  return sanitizedInput;
             } catch (error) {
-                console.error('Erro ao executar select:', error)
-            }
-        },
-        password: async function (string) {
-            try {
-                let promise = false;
-                if (0==0) {
-                    
-                }
-                return promise
-            } catch {
-                console.log();
+                console.error('Erro ao filtrar:', error)
             }
         }
 
