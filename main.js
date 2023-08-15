@@ -30,10 +30,10 @@ app.use(bodyParser.urlencoded({
 app.use(cookieParser());
 
 app.get('/', async (req, res) => {
-    //row = "*"
-    //table = "vendedores"
-    //promise = await database.crud().select(table, row)
-    //console.log(promise)
+    row = "*"
+    table = "vendedores"
+    promise = await database.crud().select(table, row)
+    console.log(promise)
 
     let ip = req.socket.remoteAddress;
     res.send(`-= MAIN PAGE =- <br> IP: ${ip}`);
@@ -177,35 +177,54 @@ app.get('/entrar', (req, res) => {
     let session=req.session;
     console.log(session);
 
-    if(session.userid){
-        res.send("Welcome User <a href=\'/sair'>click to logout</a>");
+    if(session.email){
+        res.send(`Welcome ${session.name} <a href=\'/sair'>click to logout</a>`);
     }else {
         res.sendFile(__dirname + "/front/html/login.html");
     }
     
-    
-
 });
 
-app.post('/entrar', (req, res) => {
-    //username and password
-    const myusername = 'user1'
-    const mypassword = 'mypassword'
-    // a variable to save a session
-
-    if(req.body.username == myusername && req.body.password == mypassword){
-        let session=req.session;
-        session.userid=req.body.username;
-        console.log(req.session)
-        res.send(`Hey there, welcome <a href=\'/sair'>click to logout</a>`);
+app.post('/entrar', async (req, res) => {
+    let table = `vendedores`;
+    let row = `responsavel,email,senha`;
+    let condition = `email = '${req.body.email}' and senha = '${req.body.password}'`;
+    let name, email, pass;
+    let filtered = false;
+    
+    if (req.body.password == '' || req.body.email == '') {
+        filtered = false;
+    } else {
+        filtered = true;
     }
-    else{
-        res.send('Invalid username or password');
+
+    // AFTER INPUTS FILTERED TRY TO LOGIN
+    if (filtered) {
+        try {
+            promise = await database.crud().selectWhere(table, row, condition);
+            console.log(promise)
+            name = promise[0][0].responsavel;
+            email = promise[0][0].email;
+            pass = promise[0][0].senha;
+        } catch (err) {
+            console.error(err);
+        }
+
+        if (req.body.email == email && req.body.password == pass) {
+            let session = req.session;
+            session.email = email;
+            session.name = name;
+            console.log(session)
+            res.send(`Hey there, welcome ${session.name} | <a href=\'/sair'>click to logout</a>`);
+        }
+        else {
+            res.redirect('/entrar?warning=1');
+        }
     }
 });
 
 app.get('/sair', (req, res) => {
-    req.session.userid = null; 
+    req.session.destroy(); 
     res.redirect("/entrar");
 });
 
