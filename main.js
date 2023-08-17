@@ -6,6 +6,7 @@ const filters = require('./backend/filterinputs');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { json } = require('body-parser');
+const session = require('express-session');
 require('dotenv').config()
 bot = require('./backend/bot')
 
@@ -31,11 +32,6 @@ app.use(bodyParser.urlencoded({
 app.use(cookieParser());
 
 app.get('/', async (req, res) => {
-    row = "*"
-    table = "vendedores"
-    promise = await database.crud().select(table, row)
-    console.log(promise)
-
     let ip = req.socket.remoteAddress;
     res.send(`-= MAIN PAGE =- <br> IP: ${ip}`);
 
@@ -47,18 +43,33 @@ app.get('/', async (req, res) => {
     // }
 })
 
-app.get('/rota', async (req,res) => {
-    let ip = req.socket.remoteAddress;
-    try {
-        await bot.bot(ip); // gera qr code e inicia o bot    
-    } catch (error) {
-        console.log(error);
+app.get('/rota', (req, res) => {
+    let session = req.session;
+    if (session.email && session.name && session.conta) {
+        res.redirect(`/rota/${session.conta}`);
+    } else {
+        res.redirect(`/entrar?from=rota`);
     }
-    res.sendFile(__dirname + '/front/html/teste.html');
 })
 
-app.get('/src/:img', (req,res) => {
-    res.sendFile(__dirname + '/' + req.params.img)
+app.get('/rota/:conta', async (req, res) => {
+    let session = req.session;
+    if (session.email && session.name && session.conta) {
+        let ip = req.socket.remoteAddress;
+        try {
+            await bot.bot(ip,session.conta); // gera qr code e inicia o bot
+        } catch (error) {
+            console.log(error);
+        }
+        res.sendFile(__dirname + '/front/html/teste.html');
+    } else {
+        res.redirect(`/entrar?from=rota`);
+    }
+
+})
+
+app.get('/src/qr/:img', (req,res) => {
+    res.sendFile(__dirname + '/front/src/qr/' + req.params.img)
 })
 
 app.get('/:restaurante/pedido', (req,res) => {
@@ -72,6 +83,28 @@ app.get('/conta/cadastro', (req,res) => {
 // ORDERS REGISTER
 app.post('/:restaurante/pedido', (req,res) => {
     
+}) 
+
+// ACCOUNT MENU
+
+app.get('/conta', (req, res) => {
+    let session = req.session;
+    if (session.email && session.name && session.conta) {
+        res.redirect(`/conta/${session.conta}`);
+    } else {
+        res.redirect(`/entrar?from=conta`);
+    }
+    res.send()
+}) 
+
+
+app.get('/conta/:conta', (req, res) => {
+    let session = req.session;
+    if (session.email && session.name && session.conta) {
+        res.send(`<h1>Welcome ${session.name} to your account menu</h1> <br> <h6>Your email: ${session.email}</h6> <br> <a href='/sair'> Sair </a>`);
+    } else {
+        res.redirect(`/entrar?from=conta`);
+    }
 }) 
 
 // VENDORS REGISTER
@@ -176,19 +209,20 @@ app.get('/src/js/planos.js', (req, res) => {
 
 app.get('/entrar', (req, res) => {
     let session=req.session;
-    console.log(session);
 
-    if(session.email){
-        res.send(`Welcome ${session.name} <a href=\'/sair'>click to logout</a>`);
+    if (session.email && session.name && session.conta) {
+        res.send(`<h1>Welcome ${session.name} to your account menu</h1> <br> <h6>Your email: ${session.email}</h6> <br> <a href='/sair'> Sair </a>`);
     }else {
+        // *********** OH JESUS JUST DON'T CHANGE TO REDIRECT ***********
         res.sendFile(__dirname + "/front/html/login.html");
+        // *********** OH JESUS JUST DON'T CHANGE TO REDIRECT ***********
     }
     
 });
 
 app.post('/entrar', async (req, res) => {
     let table = `vendedores`;
-    let row = `responsavel,email,senha`;
+    let row = `id,responsavel,email,senha`;
     sanitizedEmail = await filters.filter().string(`'${req.body.email}'`);
     sanitizedPass = await filters.filter().string(`'${req.body.password}'`);
     let condition = `email = '${sanitizedEmail}' and senha = '${sanitizedPass}'`;
@@ -196,8 +230,8 @@ app.post('/entrar', async (req, res) => {
 
     try {
         promise = await database.crud().selectWhere(table, row, condition);
-        console.log(promise[0])
-        if(promise[0].length == 1) {
+        if (promise[0].length == 1) {
+            idConta = promise[0][0].id;
             name = promise[0][0].responsavel;
             email = promise[0][0].email;
             pass = promise[0][0].senha;
@@ -208,13 +242,21 @@ app.post('/entrar', async (req, res) => {
 
     if (req.body.email == email && req.body.password == pass) {
         let session = req.session;
+        session.conta = idConta;
         session.email = email;
         session.name = name;
-        console.log(session)
-        res.send(`Hey there, welcome ${session.name} | <a href=\'/sair'>click to logout</a>`);
+        if (req.query.from) {
+            res.redirect(`/${req.query.from}`);
+        } else {
+            res.redirect(`/conta`);
+        }
     }
     else {
-        res.redirect('/entrar?warning=1');
+        if (req.query.from) {
+            res.redirect(`/entrar?warning=1&from=${req.query.from}`);
+        } else {
+            res.redirect('/entrar?warning=1');
+        }
     }
     
 });
@@ -227,6 +269,26 @@ app.get('/sair', (req, res) => {
 app.get('/src/js/login.js', (req, res) => {
     res.sendFile(__dirname + "/front/js/login.js");
 });
+
+app.get('/api/vendedor', async (req, res) => {
+    let session=req.session;
+
+    if (session.email && session.name && session.conta) {
+        let table = `vendedores`;
+        let rows = `id acc_id, responsavel name, nm_fantasia bussiness_name, celular phone, email mail, plano plan, endereco address, renov_automatica automatic_renew, cpf, cnpj`;
+        sanitizedId = await filters.filter().string(`'${session.conta}'`);
+        let condition = `id = '${sanitizedId}'`;
+
+        try {
+            let promise = await database.crud().selectWhere(table, rows, condition);
+            res.send(promise[0]);
+        } catch (error) {
+            
+        }
+    }else {
+        res.redirect(`/entrar`);
+    }
+})
 
 const server = app.listen(PORT, () => {
     console.log(`SERVER RUNNING: \nIP: localhost \nPORT: ${ server.address().port }`,);

@@ -5,13 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>teste</title>
 </head>
+
 <body>
+    <h3>Welcome ${session.name}!</h3> <br> 
+    <h3>Your email: ${session.email}</h3> <br>
+    <h1>Here is your QR-CODE. Connect to whatsapp now.</h1>
     <img id="qrcode" src="">
+    <br>
+    <button id="gerarQrNovo">
+        GERAR NOVO QR-CODE
+    </button>
+    <button id="turnOffBot">
+        DESLIGAR BOT
+    </button>
+    <p>Quando você gera um novo QR-CODE o antigo é desligado, iniciando assim um novo bot.</p>
+    <a href='/sair'> Sair </a>
 </body>
+
 <script>
-setInterval(function(){
-    // alert("Olá"); 
-    document.getElementById('qrcode').src = "/src/qr.png"
-}, 2000);
+    let id = document.location.href.split('/');
+    let counter = 0;
+
+    let turnOffBot = document.getElementById('turnOffBot');
+    let gerarQrNovo = document.getElementById('gerarQrNovo');
+
+
+    
+    setInterval(function(){
+        counter++
+        document.getElementById('qrcode').src = `/src/qr/qr-${id[4]}.png?${counter}`;
+    }, 1000);
 </script>
 </html>

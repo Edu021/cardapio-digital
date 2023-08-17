@@ -17,8 +17,6 @@ function filter() {
                   
                   // Remove caracteres especiais que poderiam ser usados em ataques de SQL Injection
                   const sanitizedInput = trimmedInput.replace(/['";\\]/g, '');
-                  
-                  console.log("FROM: " + input + " TO: " + sanitizedInput);
                   return sanitizedInput;
             } catch (error) {
                 console.error('Erro ao filtrar:', error)
